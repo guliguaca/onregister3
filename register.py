@@ -658,7 +658,13 @@ def main():
         else:
             print("[-] 本次注册流程未能完成。")
 
-        if args.once:
+        # 原始代码
+        # if args.once:
+        #     break
+
+        # 替换为：
+        if args.count > 0 and count >= args.count:
+            print(f"[*] 已达到设定的执行次数 ({args.count})，任务结束。")
             break
 
         wait_time = random.randint(args.sleep_min, args.sleep_max)
