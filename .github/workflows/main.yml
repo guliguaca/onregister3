@@ -47,9 +47,9 @@ jobs:
           echo "准备循环运行 $COUNT 次注册流程..."
           if [ -n "$PROXY_URL" ]; then
             # 传入 --count 参数
-            python register.py --count "$COUNT" --proxy "$PROXY_URL" --cpa-upload --cpa-prune-local --mail-provider auto
+            python register.py --count "$COUNT" --proxy "$PROXY_URL" --cpa-upload --cpa-prune-local --mail-provider auto --threads 3
           else
-            python register.py --count "$COUNT" --cpa-upload --cpa-prune-local --mail-provider auto
+            python register.py --count "$COUNT" --cpa-upload --cpa-prune-local --mail-provider auto --threads 3
           fi
           
       - name: Upload to API and Cleanup
@@ -85,15 +85,26 @@ jobs:
           else
             echo "没有找到需要上传的 JSON 文件。"
           fi
-
-      - name: Commit and Push generated JSON files
+      # 在 push 前添加检查
+      - name: Push only if tokens changed
         run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
+          if [ -n "$(git status --porcelain tokens/)" ]; then
+            git add tokens/
+            git commit -m "chore: update tokens [skip ci]"
+            git pull --rebase origin main
+            git push origin main
+          else
+            echo "✅ tokens 目录无变更，跳过推送"
+          fi
+
+      # - name: Commit and Push generated JSON files
+      #   run: |
+      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
+      #     git config --local user.name "github-actions[bot]"
           
-          # 将 Json 文件夹下的变更加入 Git
-          git add tokens/
+      #     # 将 Json 文件夹下的变更加入 Git
+      #     git add tokens/
           
-          # 如果有新文件则提交，否则跳过
-          git commit -m "Auto-add new generated token JSON" || echo "No new tokens generated"
-          git push
+      #     # 如果有新文件则提交，否则跳过
+      #     git commit -m "Auto-add new generated token JSON" || echo "No new tokens generated"
+      #     git push
